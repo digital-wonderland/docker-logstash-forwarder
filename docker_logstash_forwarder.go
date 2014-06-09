@@ -14,26 +14,26 @@ var (
 	wg             sync.WaitGroup
 )
 
-type Event struct {
-	ContainerID string `json:"id"`
-	Status      string `json:"status"`
-	Image       string `json:"from"`
-}
-
 func listenToDockerEvents(client *docker.Client) {
 	wg.Add(1)
 	defer wg.Done()
 	log.Println("Watching docker events")
-	eventChan := getEvents()
+
+	events := make(chan *docker.APIEvents)
+	defer close(events)
+
+	client.AddEventListener((chan<- *docker.APIEvents)(events))
+	defer client.RemoveEventListener(events)
+
 	for {
-		event := <-eventChan
+		event := <-events
 
 		if event == nil {
 			continue
 		}
 
 		if event.Status == "start" || event.Status == "stop" || event.Status == "die" {
-			log.Printf("Received event %s for container %s", event.Status, event.ContainerID[:12])
+			log.Printf("Received event %s for container %s", event.Status, event.ID[:12])
 		}
 	}
 }
@@ -58,15 +58,15 @@ func main() {
 		log.Fatalf("Unable to parse %s: %s", endpoint, err)
 	}
 
-	imgs, _ := client.ListImages(true)
-
-	client.
+	//	imgs, _ := client.ListImages(true)
+	//	imgs, _ := client.ListContainers(docker.ListContainersOptions{})
+	imgs, _ := client.ListContainers(docker.ListContainersOptions{All: true})
 
 	log.Printf("Found %d images", len(imgs))
 
 	for _, img := range imgs {
 		log.Println("ID: ", img.ID)
-		log.Println("Repository: ", img.Repository)
+		//		log.Println("Repository: ", img.Repository)
 	}
 
 	log.Println("Path: ", os.Getenv("PATH"))
@@ -79,16 +79,16 @@ func main() {
 	log.Println("done")
 }
 
-//func getEndpoint() string {
-//	defaultEndpoint := "unix:///var/run/docker.sock"
-//	if os.Getenv("DOCKER_HOST") != "" {
-//		defaultEndpoint = os.Getenv("DOCKER_HOST")
-//	}
-//
-//	if endPoint != "" {
-//		defaultEndpoint = endPoint
-//	}
-//
-//	return defaultEndpoint
-//}
+func getDockerEndpoint() string {
+	defaultEndpoint := "unix:///var/run/docker.sock"
+	if os.Getenv("DOCKER_HOST") != "" {
+		defaultEndpoint = os.Getenv("DOCKER_HOST")
+	}
+
+	if dockerEndPoint != "" {
+		defaultEndpoint = dockerEndPoint
+	}
+
+	return defaultEndpoint
+}
 
