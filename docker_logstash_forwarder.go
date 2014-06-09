@@ -17,17 +17,17 @@ var (
 func listenToDockerEvents(client *docker.Client) {
 	wg.Add(1)
 	defer wg.Done()
-	log.Println("Listening to docker events")
 
 	events := make(chan *docker.APIEvents)
 	defer close(events)
 
-	err := client.AddEventListener((chan<- *docker.APIEvents)(events))
+	err := client.AddEventListener((chan <- *docker.APIEvents)(events))
 	if err != nil {
 		log.Fatal("Unable to add docker event listener: %s", err)
 	}
 	defer client.RemoveEventListener(events)
 
+	log.Println("Listening to docker events...")
 	for {
 		event := <-events
 
@@ -53,29 +53,20 @@ func main() {
 
 	endpoint := getDockerEndpoint()
 
-	log.Printf("Using docker endpoint: %s", endpoint)
-
 	client, err := docker.NewClient(endpoint)
-
 	if err != nil {
-		log.Fatalf("Unable to parse %s: %s", endpoint, err)
+		log.Fatalf("Unable to connect to docker at %s: %s", endpoint, err)
+	}
+	log.Printf("Connected to docker at %s", endpoint)
+
+	containers, _ := client.ListContainers(docker.ListContainersOptions{All: true})
+
+	log.Printf("Found %d containers", len(containers))
+
+	for _, container := range containers {
+		log.Println("ID: ", container.ID)
 	}
 
-	//	imgs, _ := client.ListImages(true)
-	//	imgs, _ := client.ListContainers(docker.ListContainersOptions{})
-	imgs, _ := client.ListContainers(docker.ListContainersOptions{All: true})
-
-	log.Printf("Found %d images", len(imgs))
-
-	for _, img := range imgs {
-		log.Println("ID: ", img.ID)
-		//		log.Println("Repository: ", img.Repository)
-	}
-
-	log.Println("Path: ", os.Getenv("PATH"))
-	log.Println("Docker: ", os.Getenv("DOCKER_HOST"))
-
-	log.Println("Listening to docker events...")
 	listenToDockerEvents(client)
 	wg.Wait()
 
