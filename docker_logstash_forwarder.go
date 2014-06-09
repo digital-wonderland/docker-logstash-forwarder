@@ -17,12 +17,15 @@ var (
 func listenToDockerEvents(client *docker.Client) {
 	wg.Add(1)
 	defer wg.Done()
-	log.Println("Watching docker events")
+	log.Println("Listening to docker events")
 
 	events := make(chan *docker.APIEvents)
 	defer close(events)
 
-	client.AddEventListener((chan<- *docker.APIEvents)(events))
+	err := client.AddEventListener((chan<- *docker.APIEvents)(events))
+	if err != nil {
+		log.Fatal("Unable to add docker event listener: %s", err)
+	}
 	defer client.RemoveEventListener(events)
 
 	for {
