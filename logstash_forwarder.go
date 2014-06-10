@@ -118,18 +118,21 @@ func generateConfig(client *docker.Client) error {
 				globalConfig.Files = append(globalConfig.Files, file)
 			}
 		}
-
 	}
 
-	fo, err := os.Create("/tmp/logstash-forwarder.conf")
+	path := "/tmp/logstash-forwarder.conf"
+	fo, err := os.Create(path)
 	if err != nil {
-		log.Fatalf("Unable to write logstash-forwarder config: %s", err)
+		log.Fatalf("Unable to open %s: %s", path, err)
 	}
 	defer fo.Close()
 
-	enc := json.NewEncoder(fo)
-	enc.Encode(globalConfig)
-
+	j, err := json.MarshalIndent(globalConfig, "", "  ")
+	fo.Write(j)
+	if err != nil {
+		log.Fatalf("Unable to write logstash-forwarder config to %s: %s", path, err)
+	}
+	log.Printf("Wrote logstash-forwarder config to %s", path)
 	return nil
 }
 
