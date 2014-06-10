@@ -6,10 +6,14 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
 )
+
+var cmd = exec.Command("logstash-forwarder", "-config", "/tmp/logstash-forwarder.conf")
+var running = false
 
 type Network struct {
 	Servers        []string `json:"servers"`
@@ -133,6 +137,22 @@ func generateConfig(client *docker.Client) error {
 		log.Fatalf("Unable to write logstash-forwarder config to %s: %s", path, err)
 	}
 	log.Printf("Wrote logstash-forwarder config to %s", path)
+
+	if running {
+		if err := cmd.Process.Kill(); err != nil {
+			log.Printf("Unable to stop logstash-forwarder")
+		}
+		log.Println("Waiting for logstash-forwarder to stop")
+		cmd.Wait()
+	} else {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+	if err := cmd.Start(); err != nil {
+		log.Printf("Unable to start logstash-forwarder: %s", err)
+	}
+	running = true
+	log.Printf("Started logstash-forwarder")
 	return nil
 }
 
