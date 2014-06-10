@@ -10,9 +10,10 @@ import (
 )
 
 var (
-	configFile     string
-	dockerEndPoint string
-	wg             sync.WaitGroup
+	configFile       string
+	dockerEndPoint   string
+	logstashEndPoint string
+	wg               sync.WaitGroup
 )
 
 func listenToDockerEvents(client *docker.Client) {
@@ -45,6 +46,7 @@ func listenToDockerEvents(client *docker.Client) {
 
 func initFlags() {
 	flag.StringVar(&dockerEndPoint, "docker", "", "docker api endpoint - defaults to unix:///var/run/docker.sock")
+	flag.StringVar(&logstashEndPoint, "logstash", "", "logstash endpoint - defaults to logstash:5043")
 	flag.StringVar(&configFile, "config", "/etc/logstash-forwarder.conf", "logstash-forwarder config")
 	flag.Parse()
 }
@@ -74,15 +76,15 @@ func main() {
 }
 
 func getDockerEndpoint() string {
-	defaultEndpoint := "unix:///var/run/docker.sock"
+	return getEndPoint("unix:///var/run/docker.sock", dockerEndPoint, "DOCKER_HOST")
+}
 
-	if os.Getenv("DOCKER_HOST") != "" {
-		defaultEndpoint = os.Getenv("DOCKER_HOST")
+func getEndPoint(sensibleDefault string, flag string, envVar string) string {
+	if flag != "" {
+		return flag
+	} else if os.Getenv(envVar) != "" {
+		return os.Getenv(envVar)
+	} else {
+		return sensibleDefault
 	}
-
-	if dockerEndPoint != "" {
-		defaultEndpoint = dockerEndPoint
-	}
-
-	return defaultEndpoint
 }
