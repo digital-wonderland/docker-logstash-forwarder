@@ -106,7 +106,9 @@ func generateConfig(client *docker.Client) error {
 
 		containerConfig, err := getLogstashForwarderConfigForContainer(container.ID)
 		if err != nil {
-			log.Printf("No logstash-forwarder config found in %s: %s", container.ID, err)
+			if !os.IsNotExist(err) {
+				log.Printf("Unable to look for logstash-forwarer config in %s: %s", container.ID, err)
+			}
 		} else {
 			log.Printf("Found logstash-forwarder config in %s", container.ID)
 
@@ -119,10 +121,13 @@ func generateConfig(client *docker.Client) error {
 
 	}
 
-	log.Printf("Network: %s", globalConfig.Network.Servers)
+	fo, err := os.Create("/tmp/logstash-forwarder.conf")
+	if err != nil {
+		log.Fatalf("Unable to write logstash-forwarder config: %s", err)
+	}
+	defer fo.Close()
 
-	// print to /etc/logstash-forwarder.conf
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(fo)
 	enc.Encode(globalConfig)
 
 	return nil
