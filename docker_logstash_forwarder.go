@@ -47,7 +47,7 @@ func listenToDockerEvents(client *docker.Client) {
 func initFlags() {
 	flag.StringVar(&dockerEndPoint, "docker", "", "docker api endpoint - defaults to unix:///var/run/docker.sock")
 	flag.StringVar(&logstashEndPoint, "logstash", "", "logstash endpoint - defaults to logstash:5043")
-	flag.StringVar(&configFile, "config", "/etc/logstash-forwarder.conf", "logstash-forwarder config")
+	flag.StringVar(&configFile, "config", "", "logstash-forwarder config")
 	flag.Parse()
 }
 

@@ -30,8 +30,6 @@ type LogstashForwarderConfig struct {
 }
 
 func readLogstashForwarderConfig(path string) (*LogstashForwarderConfig, error) {
-	//	log.Printf("Reading logstash-forwarder config from %s", path)
-
 	configFile, err := os.Open(path)
 	defer configFile.Close()
 	if err != nil {
@@ -77,14 +75,22 @@ func addConfigForContainer(config *LogstashForwarderConfig, id string, hostname 
 	config.Files = append(config.Files, file)
 }
 
+func getLogstashForwarderConfig() *LogstashForwarderConfig {
+	if configFile != "" {
+		config, err := readLogstashForwarderConfig(configFile)
+		if err != nil {
+			log.Fatalf("Unable to read logstash-forwarder config from %s: %s", configFile, err)
+		}
+		log.Printf("Using logstash-forwarder config from %s as template", configFile)
+		return config
+	} else {
+		return generateDefaultConfig()
+	}
+}
+
 func generateConfig(client *docker.Client) error {
 	log.Println("Generating configuration...")
-	globalConfig := generateDefaultConfig()
-	//	globalConfig, err := readLogstashForwarderConfig(configFile)
-	//	if err != nil {
-	//		log.Fatalf("Unable to read logstash-forwarder config from %s: %s", configFile, err)
-	//	}
-	//	log.Printf("Using logstash-forwarder config from %s as template", configFile)
+	globalConfig := getLogstashForwarderConfig()
 
 	containers, err := client.ListContainers(docker.ListContainersOptions{All: false})
 	if err != nil {
@@ -115,6 +121,7 @@ func generateConfig(client *docker.Client) error {
 
 	log.Printf("Network: %s", globalConfig.Network.Servers)
 
+	// print to /etc/logstash-forwarder.conf
 	enc := json.NewEncoder(os.Stdout)
 	enc.Encode(globalConfig)
 
