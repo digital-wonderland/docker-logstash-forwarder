@@ -8,8 +8,8 @@ import (
 	"os"
 	"sync"
 
-	docker "github.com/fsouza/go-dockerclient"
 	"fmt"
+	docker "github.com/fsouza/go-dockerclient"
 )
 
 var (
@@ -20,21 +20,21 @@ var (
 
 type Network struct {
 	Servers        []string `json:"servers"`
-	SslCertificate string `json:"ssl certificate"`
+	SslCertificate string   `json:"ssl certificate"`
 }
 
 type File struct {
-	Paths []string `json:"paths"`
+	Paths  []string          `json:"paths"`
 	Fields map[string]string `json:"fields"`
 }
 
 type LogstashForwarderConfig struct {
 	Network Network `json:"network"`
-	Files   []File `json:"files"`
+	Files   []File  `json:"files"`
 }
 
 func readLogstashForwarderConfig(path string) (*LogstashForwarderConfig, error) {
-//	log.Printf("Reading logstash-forwarder config from %s", path)
+	//	log.Printf("Reading logstash-forwarder config from %s", path)
 
 	configFile, err := os.Open(path)
 	defer configFile.Close()
@@ -85,9 +85,7 @@ func generateConfig(client *docker.Client) error {
 			}
 		}
 
-
 	}
-
 
 	log.Printf("Network: %s", globalConfig.Network.Servers)
 
@@ -127,7 +125,7 @@ func listenToDockerEvents(client *docker.Client) {
 	events := make(chan *docker.APIEvents)
 	defer close(events)
 
-	err := client.AddEventListener((chan <- *docker.APIEvents)(events))
+	err := client.AddEventListener((chan<- *docker.APIEvents)(events))
 	if err != nil {
 		log.Fatal("Unable to add docker event listener: %s", err)
 	}
@@ -190,4 +188,3 @@ func getDockerEndpoint() string {
 
 	return defaultEndpoint
 }
-
