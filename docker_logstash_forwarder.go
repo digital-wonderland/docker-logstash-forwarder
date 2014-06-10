@@ -127,7 +127,7 @@ func listenToDockerEvents(client *docker.Client) {
 
 	err := client.AddEventListener((chan<- *docker.APIEvents)(events))
 	if err != nil {
-		log.Fatal("Unable to add docker event listener: %s", err)
+		log.Fatalf("Unable to add docker event listener: %s", err)
 	}
 	defer client.RemoveEventListener(events)
 
