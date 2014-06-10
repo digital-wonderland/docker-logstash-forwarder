@@ -13,6 +13,8 @@ import (
 type Network struct {
 	Servers        []string `json:"servers"`
 	SslCertificate string   `json:"ssl certificate"`
+	SslKey         string   `json:"ssl key"`
+	SslCa          string   `json:"ssl ca"`
 }
 
 type File struct {
