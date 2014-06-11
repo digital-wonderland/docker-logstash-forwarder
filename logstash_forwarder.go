@@ -12,8 +12,10 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 )
 
-var cmd = exec.Command("logstash-forwarder", "-config", "/tmp/logstash-forwarder.conf")
-var running = false
+var (
+	cmd     *exec.Cmd
+	running = false
+)
 
 type Network struct {
 	Servers        []string `json:"servers"`
@@ -139,20 +141,26 @@ func generateConfig(client *docker.Client) error {
 	log.Printf("Wrote logstash-forwarder config to %s", path)
 
 	if running {
+		log.Println("Waiting for logstash-forwarder to stop")
+		// perhaps use SIGTERM instead of Kill()?
+		//		if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		if err := cmd.Process.Kill(); err != nil {
 			log.Printf("Unable to stop logstash-forwarder")
 		}
-		log.Println("Waiting for logstash-forwarder to stop")
-		cmd.Wait()
-	} else {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		if _, err := cmd.Process.Wait(); err != nil {
+			log.Printf("Unable to wait for logstash-forwarder to stop: %s", err)
+		}
+		log.Printf("Stopped logstash-forwarder")
 	}
+	cmd = exec.Command("logstash-forwarder", "-config", "/tmp/logstash-forwarder.conf")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
 	if err := cmd.Start(); err != nil {
 		log.Printf("Unable to start logstash-forwarder: %s", err)
 	}
 	running = true
-	log.Printf("Started logstash-forwarder")
+	log.Printf("Starting logstash-forwarder...")
 	return nil
 }
 
