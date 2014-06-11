@@ -94,7 +94,10 @@ func getLogstashForwarderConfig() *LogstashForwarderConfig {
 	}
 }
 
-func generateConfig(client *docker.Client) error {
+func generateConfig() {
+	// reset timer
+	refreshTimer = nil
+
 	log.Println("Generating configuration...")
 	globalConfig := getLogstashForwarderConfig()
 
@@ -161,7 +164,6 @@ func generateConfig(client *docker.Client) error {
 	}
 	running = true
 	log.Printf("Starting logstash-forwarder...")
-	return nil
 }
 
 func getLogstashForwarderConfigForContainer(id string) (*LogstashForwarderConfig, error) {

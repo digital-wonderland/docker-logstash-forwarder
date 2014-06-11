@@ -5,14 +5,17 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
 )
 
 var (
+	client           *docker.Client
 	configFile       string
 	dockerEndPoint   string
 	logstashEndPoint string
+	refreshTimer     *time.Timer = nil
 	wg               sync.WaitGroup
 )
 
@@ -39,7 +42,10 @@ func listenToDockerEvents(client *docker.Client) {
 
 		if event.Status == "start" || event.Status == "stop" || event.Status == "die" {
 			log.Printf("Received event %s for container %s", event.Status, event.ID[:12])
-			generateConfig(client)
+
+			if refreshTimer == nil {
+				refreshTimer = time.AfterFunc(time.Second*5, generateConfig)
+			}
 		}
 	}
 }
@@ -58,17 +64,18 @@ func main() {
 
 	endpoint := getDockerEndpoint()
 
-	client, err := docker.NewClient(endpoint)
+	d, err := docker.NewClient(endpoint)
 	if err != nil {
 		log.Fatalf("Unable to connect to docker at %s: %s", endpoint, err)
 	}
+	client = d
 	version, err := client.Version()
 	if err != nil {
 		log.Fatalf("Unable to retrieve version information from docker: %s", err)
 	}
 	log.Printf("Connected to docker at %s (v%s)", endpoint, version.Get("Version"))
 
-	generateConfig(client)
+	generateConfig()
 	listenToDockerEvents(client)
 	wg.Wait()
 
