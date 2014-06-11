@@ -98,8 +98,9 @@ func getLogstashForwarderConfig() *LogstashForwarderConfig {
 }
 
 func generateConfig() {
-	// reset timer
-	refreshTimer = nil
+	refresh.mu.Lock()
+	refresh.isTriggered = false
+	refresh.mu.Unlock()
 
 	log.Println("Generating configuration...")
 	globalConfig := getLogstashForwarderConfig()

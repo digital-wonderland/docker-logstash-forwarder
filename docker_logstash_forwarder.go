@@ -15,9 +15,15 @@ var (
 	configFile       string
 	dockerEndPoint   string
 	logstashEndPoint string
-	refreshTimer     *time.Timer = nil
+	refresh          ConfigRefresh
 	wg               sync.WaitGroup
 )
+
+type ConfigRefresh struct {
+	mu          sync.Mutex
+	isTriggered bool
+	timer       *time.Timer
+}
 
 func listenToDockerEvents(client *docker.Client) {
 	wg.Add(1)
@@ -43,9 +49,12 @@ func listenToDockerEvents(client *docker.Client) {
 		if event.Status == "start" || event.Status == "stop" || event.Status == "die" {
 			log.Printf("Received event %s for container %s", event.Status, event.ID[:12])
 
-			if refreshTimer == nil {
-				refreshTimer = time.AfterFunc(time.Second*5, generateConfig)
+			refresh.mu.Lock()
+			if !refresh.isTriggered {
+				refresh.timer = time.AfterFunc(time.Second*5, generateConfig)
+				refresh.isTriggered = true
 			}
+			refresh.mu.Unlock()
 		}
 	}
 }
