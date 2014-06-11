@@ -57,15 +57,18 @@ func getLogstashEndpoint() string {
 }
 
 func generateDefaultConfig() *LogstashForwarderConfig {
-	config := new(LogstashForwarderConfig)
+	network := Network{
+		Servers:        []string{getLogstashEndpoint()},
+		SslCertificate: "/etc/pki/tls/certs/logstash-forwarder.crt",
+		SslKey:         "/etc/pki/tls/private/logstash-forwarder.key",
+		SslCa:          "/etc/pki/tls/certs/logstash-forwarder.crt",
+		Timeout:        15,
+	}
 
-	config.Network.Servers = []string{getLogstashEndpoint()}
-	config.Network.SslCertificate = "/etc/pki/tls/certs/logstash-forwarder.crt"
-	config.Network.SslKey = "/etc/pki/tls/private/logstash-forwarder.key"
-	config.Network.SslCa = "/etc/pki/tls/certs/logstash-forwarder.crt"
-	config.Network.Timeout = 15
-
-	config.Files = []File{}
+	config := &LogstashForwarderConfig{
+		Network: network,
+		Files:   []File{},
+	}
 
 	return config
 }
