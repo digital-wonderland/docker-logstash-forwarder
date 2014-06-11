@@ -122,10 +122,7 @@ func generateConfig() {
 				log.Printf("Unable to look for logstash-forwarer config in %s: %s", container.ID, err)
 			}
 		} else {
-			log.Printf("Found logstash-forwarder config in %s", container.ID)
-
 			for _, file := range containerConfig.Files {
-				log.Printf("Adding file %s of type %s", file.Paths, file.Fields["type"])
 				file.Fields["host"] = hostname
 				globalConfig.Files = append(globalConfig.Files, file)
 			}
@@ -176,8 +173,10 @@ func getLogstashForwarderConfigForContainer(id string) (*LogstashForwarderConfig
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Found logstash-forwarder config in %s", id)
 
 	for _, file := range config.Files {
+		log.Printf("Adding files %s of type %s", file.Paths, file.Fields["type"])
 		for i, path := range file.Paths {
 			file.Paths[i] = containerDirectory + path
 		}
