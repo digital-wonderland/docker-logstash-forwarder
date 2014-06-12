@@ -14,6 +14,7 @@ var (
 	client           *docker.Client
 	configFile       string
 	dockerEndPoint   string
+	interval         int
 	logstashEndPoint string
 	refresh          ConfigRefresh
 	wg               sync.WaitGroup
@@ -51,7 +52,7 @@ func listenToDockerEvents(client *docker.Client) {
 
 			refresh.mu.Lock()
 			if !refresh.isTriggered {
-				refresh.timer = time.AfterFunc(time.Second*5, generateConfig)
+				refresh.timer = time.AfterFunc(time.Duration(interval)*time.Second, generateConfig)
 				refresh.isTriggered = true
 			}
 			refresh.mu.Unlock()
@@ -61,6 +62,7 @@ func listenToDockerEvents(client *docker.Client) {
 
 func initFlags() {
 	flag.StringVar(&dockerEndPoint, "docker", "", "docker api endpoint - defaults to $DOCKER_HOST or unix:///var/run/docker.sock")
+	flag.IntVar(&interval, "interval", 5, "number of seconds to wait after an event for events to accumulate")
 	flag.StringVar(&logstashEndPoint, "logstash", "", "logstash endpoint - defaults to $LOGSTASH_HOST or logstash:5043")
 	flag.StringVar(&configFile, "config", "", "logstash-forwarder config")
 	flag.Parse()
