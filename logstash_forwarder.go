@@ -73,13 +73,15 @@ func generateDefaultConfig() *LogstashForwarderConfig {
 	return config
 }
 
-func addConfigForContainer(config *LogstashForwarderConfig, id string, hostname string) {
+func addConfigForContainer(config *LogstashForwarderConfig, container docker.APIContainers, hostname string) {
+	id := container.ID
 	file := File{}
 	file.Paths = []string{fmt.Sprintf("/var/lib/docker/containers/%s/%s-json.log", id, id)}
 	file.Fields = make(map[string]string)
 	file.Fields["type"] = "docker"
 	file.Fields["docker.id"] = id
 	file.Fields["docker.hostname"] = hostname
+	file.Fields["docker.image"] = container.Image
 
 	config.Files = append(config.Files, file)
 }
@@ -115,7 +117,7 @@ func generateConfig() {
 		log.Printf("%d. %s", i+1, container.ID)
 
 		hostname := strings.Trim(getHostnameForContainer(container.ID), " \n")
-		addConfigForContainer(globalConfig, container.ID, hostname)
+		addConfigForContainer(globalConfig, container, hostname)
 
 		containerConfig, err := getLogstashForwarderConfigForContainer(container.ID)
 		if err != nil {
