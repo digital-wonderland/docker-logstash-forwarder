@@ -52,6 +52,7 @@ func listenToDockerEvents(client *docker.Client) {
 
 			refresh.mu.Lock()
 			if !refresh.isTriggered {
+				log.Printf("Triggering refresh in %d seconds", interval)
 				refresh.timer = time.AfterFunc(time.Duration(interval)*time.Second, generateConfig)
 				refresh.isTriggered = true
 			}
