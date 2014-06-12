@@ -14,13 +14,13 @@ var (
 	client           *docker.Client
 	configFile       string
 	dockerEndPoint   string
-	interval         int
+	lazyness         int
 	logstashEndPoint string
-	refresh          ConfigRefresh
+	refresh          configRefresh
 	wg               sync.WaitGroup
 )
 
-type ConfigRefresh struct {
+type configRefresh struct {
 	mu          sync.Mutex
 	isTriggered bool
 	timer       *time.Timer
@@ -52,8 +52,8 @@ func listenToDockerEvents(client *docker.Client) {
 
 			refresh.mu.Lock()
 			if !refresh.isTriggered {
-				log.Printf("Triggering refresh in %d seconds", interval)
-				refresh.timer = time.AfterFunc(time.Duration(interval)*time.Second, generateConfig)
+				log.Printf("Triggering refresh in %d seconds", lazyness)
+				refresh.timer = time.AfterFunc(time.Duration(lazyness)*time.Second, generateConfig)
 				refresh.isTriggered = true
 			}
 			refresh.mu.Unlock()
@@ -63,7 +63,7 @@ func listenToDockerEvents(client *docker.Client) {
 
 func initFlags() {
 	flag.StringVar(&dockerEndPoint, "docker", "", "docker api endpoint - defaults to $DOCKER_HOST or unix:///var/run/docker.sock")
-	flag.IntVar(&interval, "interval", 5, "number of seconds to wait after an event for events to accumulate")
+	flag.IntVar(&lazyness, "lazyness", 5, "number of seconds to wait after an event for events to accumulate")
 	flag.StringVar(&logstashEndPoint, "logstash", "", "logstash endpoint - defaults to $LOGSTASH_HOST or logstash:5043")
 	flag.StringVar(&configFile, "config", "", "logstash-forwarder config")
 	flag.Parse()
