@@ -1,4 +1,4 @@
-package main
+package forwarder
 
 import (
 	"encoding/json"
@@ -52,13 +52,9 @@ func readLogstashForwarderConfig(path string) (*LogstashForwarderConfig, error) 
 	return logstashConfig, nil
 }
 
-func getLogstashEndpoint() string {
-	return getEndPoint("logstash:5043", logstashEndPoint, "LOGSTASH_HOST")
-}
-
-func generateDefaultConfig() *LogstashForwarderConfig {
+func generateDefaultConfig(logstashEndpoint string) *LogstashForwarderConfig {
 	network := Network{
-		Servers:        []string{getLogstashEndpoint()},
+		Servers:        []string{logstashEndpoint},
 		SslCertificate: "/etc/pki/tls/certs/logstash-forwarder.crt",
 		SslKey:         "/etc/pki/tls/private/logstash-forwarder.key",
 		SslCa:          "/etc/pki/tls/certs/logstash-forwarder.crt",
@@ -86,7 +82,7 @@ func addConfigForContainer(config *LogstashForwarderConfig, container docker.API
 	config.Files = append(config.Files, file)
 }
 
-func getLogstashForwarderConfig() *LogstashForwarderConfig {
+func getLogstashForwarderConfig(logstashEndpoint string, configFile string) *LogstashForwarderConfig {
 	if configFile != "" {
 		config, err := readLogstashForwarderConfig(configFile)
 		if err != nil {
@@ -95,17 +91,14 @@ func getLogstashForwarderConfig() *LogstashForwarderConfig {
 		log.Printf("Using logstash-forwarder config from %s as template", configFile)
 		return config
 	} else {
-		return generateDefaultConfig()
+		return generateDefaultConfig(logstashEndpoint)
 	}
 }
 
-func generateConfig() {
-	refresh.mu.Lock()
-	refresh.isTriggered = false
-	refresh.mu.Unlock()
+func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile string) {
 
 	log.Println("Generating configuration...")
-	globalConfig := getLogstashForwarderConfig()
+	globalConfig := getLogstashForwarderConfig(logstashEndpoint, configFile)
 
 	containers, err := client.ListContainers(docker.ListContainersOptions{All: false})
 	if err != nil {

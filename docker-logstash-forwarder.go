@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/digital-wonderland/docker-logstash-forwarder/forwarder"
 	docker "github.com/fsouza/go-dockerclient"
 )
 
@@ -53,12 +54,19 @@ func listenToDockerEvents(client *docker.Client) {
 			refresh.mu.Lock()
 			if !refresh.isTriggered {
 				log.Printf("Triggering refresh in %d seconds", laziness)
-				refresh.timer = time.AfterFunc(time.Duration(laziness)*time.Second, generateConfig)
+				refresh.timer = time.AfterFunc(time.Duration(laziness)*time.Second, triggerRefresh)
 				refresh.isTriggered = true
 			}
 			refresh.mu.Unlock()
 		}
 	}
+}
+
+func triggerRefresh() {
+	refresh.mu.Lock()
+	refresh.isTriggered = false
+	refresh.mu.Unlock()
+	forwarder.GenerateConfig(client, getLogstashEndpoint(), configFile)
 }
 
 func initFlags() {
@@ -87,7 +95,7 @@ func main() {
 	}
 	log.Printf("Connected to docker at %s (v%s)", endpoint, version.Get("Version"))
 
-	generateConfig()
+	triggerRefresh()
 	listenToDockerEvents(client)
 	wg.Wait()
 
@@ -96,6 +104,10 @@ func main() {
 
 func getDockerEndpoint() string {
 	return getEndPoint("unix:///var/run/docker.sock", dockerEndPoint, "DOCKER_HOST")
+}
+
+func getLogstashEndpoint() string {
+	return getEndPoint("logstash:5043", logstashEndPoint, "LOGSTASH_HOST")
 }
 
 func getEndPoint(sensibleDefault string, flag string, envVar string) string {
