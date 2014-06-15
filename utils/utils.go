@@ -63,3 +63,8 @@ func RegisterDockerEventListener(client *docker.Client, function func(), wg *syn
 		}
 	}
 }
+
+func TimeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	log.Printf("%s took %s", name, elapsed)
+}

@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/digital-wonderland/docker-logstash-forwarder/utils"
 )
 
 var (
@@ -95,6 +97,7 @@ func getLogstashForwarderConfig(logstashEndpoint string, configFile string) *Log
 }
 
 func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile string) {
+	defer utils.TimeTrack(time.Now(), "Config generation")
 
 	log.Println("Generating configuration...")
 	globalConfig := getLogstashForwarderConfig(logstashEndpoint, configFile)
