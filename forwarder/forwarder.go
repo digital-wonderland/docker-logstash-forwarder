@@ -91,9 +91,8 @@ func getConfig(logstashEndpoint string, configFile string) *LogstashForwarderCon
 		}
 		log.Printf("Using logstash-forwarder config from %s as template", configFile)
 		return config
-	} else {
-		return generateDefaultConfig(logstashEndpoint)
 	}
+	return generateDefaultConfig(logstashEndpoint)
 }
 
 func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile string) {
