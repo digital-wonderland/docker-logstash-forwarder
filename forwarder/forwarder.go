@@ -128,19 +128,19 @@ func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile s
 		}
 	}
 
-	path := "/tmp/logstash-forwarder.conf"
-	fo, err := os.Create(path)
+	const configPath = "/tmp/logstash-forwarder.conf"
+	fo, err := os.Create(configPath)
 	if err != nil {
-		log.Fatalf("Unable to open %s: %s", path, err)
+		log.Fatalf("Unable to open %s: %s", configPath, err)
 	}
 	defer fo.Close()
 
 	j, err := json.MarshalIndent(globalConfig, "", "  ")
 	fo.Write(j)
 	if err != nil {
-		log.Fatalf("Unable to write logstash-forwarder config to %s: %s", path, err)
+		log.Fatalf("Unable to write logstash-forwarder config to %s: %s", configPath, err)
 	}
-	log.Printf("Wrote logstash-forwarder config to %s", path)
+	log.Printf("Wrote logstash-forwarder config to %s", configPath)
 
 	if running {
 		log.Println("Waiting for logstash-forwarder to stop")
@@ -154,7 +154,7 @@ func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile s
 		}
 		log.Printf("Stopped logstash-forwarder")
 	}
-	cmd = exec.Command("logstash-forwarder", "-config", "/tmp/logstash-forwarder.conf")
+	cmd = exec.Command("logstash-forwarder", "-config", configPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
