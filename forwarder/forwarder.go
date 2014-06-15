@@ -35,7 +35,21 @@ type LogstashForwarderConfig struct {
 	Files   []File  `json:"files"`
 }
 
-func readLogstashForwarderConfig(path string) (*LogstashForwarderConfig, error) {
+func (config *LogstashForwarderConfig) addContainerLogFile(container *docker.Container) {
+	id := container.ID
+	file := File{}
+	file.Paths = []string{fmt.Sprintf("/var/lib/docker/containers/%s/%s-json.log", id, id)}
+	file.Fields = make(map[string]string)
+	file.Fields["type"] = "docker"
+	file.Fields["docker.id"] = id
+	file.Fields["docker.hostname"] = container.Config.Hostname
+	file.Fields["docker.name"] = container.Name
+	file.Fields["docker.image"] = container.Config.Image
+
+	config.Files = append(config.Files, file)
+}
+
+func readConfigFromFile(path string) (*LogstashForwarderConfig, error) {
 	configFile, err := os.Open(path)
 	defer configFile.Close()
 	if err != nil {
@@ -69,23 +83,9 @@ func generateDefaultConfig(logstashEndpoint string) *LogstashForwarderConfig {
 	return config
 }
 
-func addConfigForContainer(config *LogstashForwarderConfig, container *docker.Container) {
-	id := container.ID
-	file := File{}
-	file.Paths = []string{fmt.Sprintf("/var/lib/docker/containers/%s/%s-json.log", id, id)}
-	file.Fields = make(map[string]string)
-	file.Fields["type"] = "docker"
-	file.Fields["docker.id"] = id
-	file.Fields["docker.hostname"] = container.Config.Hostname
-	file.Fields["docker.name"] = container.Name
-	file.Fields["docker.image"] = container.Config.Image
-
-	config.Files = append(config.Files, file)
-}
-
-func getLogstashForwarderConfig(logstashEndpoint string, configFile string) *LogstashForwarderConfig {
+func getConfig(logstashEndpoint string, configFile string) *LogstashForwarderConfig {
 	if configFile != "" {
-		config, err := readLogstashForwarderConfig(configFile)
+		config, err := readConfigFromFile(configFile)
 		if err != nil {
 			log.Fatalf("Unable to read logstash-forwarder config from %s: %s", configFile, err)
 		}
@@ -96,11 +96,11 @@ func getLogstashForwarderConfig(logstashEndpoint string, configFile string) *Log
 	}
 }
 
-func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile string) {
+func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile string) {
 	defer utils.TimeTrack(time.Now(), "Config generation")
 
 	log.Println("Generating configuration...")
-	globalConfig := getLogstashForwarderConfig(logstashEndpoint, configFile)
+	forwarderConfig := getConfig(logstashEndpoint, configFile)
 
 	containers, err := client.ListContainers(docker.ListContainersOptions{All: false})
 	if err != nil {
@@ -116,17 +116,17 @@ func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile s
 			log.Fatalf("Unable to inspect container %s: %s", c.ID, err)
 		}
 
-		addConfigForContainer(globalConfig, container)
+		forwarderConfig.addContainerLogFile(container)
 
-		containerConfig, err := getLogstashForwarderConfigForContainer(container.ID)
+		containerConfig, err := getInContainerConfig(container.ID)
 		if err != nil {
 			if !os.IsNotExist(err) {
-				log.Printf("Unable to look for logstash-forwarer config in %s: %s", container.ID, err)
+				log.Printf("Unable to look for logstash-forwarder config in %s: %s", container.ID, err)
 			}
 		} else {
 			for _, file := range containerConfig.Files {
 				file.Fields["host"] = container.Config.Hostname
-				globalConfig.Files = append(globalConfig.Files, file)
+				forwarderConfig.Files = append(forwarderConfig.Files, file)
 			}
 		}
 	}
@@ -138,7 +138,7 @@ func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile s
 	}
 	defer fo.Close()
 
-	j, err := json.MarshalIndent(globalConfig, "", "  ")
+	j, err := json.MarshalIndent(forwarderConfig, "", "  ")
 	fo.Write(j)
 	if err != nil {
 		log.Fatalf("Unable to write logstash-forwarder config to %s: %s", configPath, err)
@@ -168,10 +168,10 @@ func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile s
 	log.Printf("Starting logstash-forwarder...")
 }
 
-func getLogstashForwarderConfigForContainer(id string) (*LogstashForwarderConfig, error) {
+func getInContainerConfig(id string) (*LogstashForwarderConfig, error) {
 	containerDirectory := fmt.Sprintf("/var/lib/docker/btrfs/subvolumes/%s", id)
 	path := fmt.Sprintf("%s/etc/logstash-forwarder.conf", containerDirectory)
-	config, err := readLogstashForwarderConfig(path)
+	config, err := readConfigFromFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -183,6 +183,5 @@ func getLogstashForwarderConfigForContainer(id string) (*LogstashForwarderConfig
 			file.Paths[i] = containerDirectory + path
 		}
 	}
-
 	return config, nil
 }

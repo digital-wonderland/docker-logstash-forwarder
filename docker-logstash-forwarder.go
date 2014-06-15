@@ -53,11 +53,11 @@ func main() {
 }
 
 func generateConfig() {
-	log.Printf("Generating new configuration...")
+	log.Printf("Triggering refresh...")
 	utils.Refresh.Mu.Lock()
 	utils.Refresh.IsTriggered = false
 	utils.Refresh.Mu.Unlock()
-	forwarder.GenerateConfig(client, getLogstashEndpoint(), configFile)
+	forwarder.TriggerRefresh(client, getLogstashEndpoint(), configFile)
 }
 
 func getDockerEndpoint() string {
