@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"time"
 
-	docker "github.com/fsouza/go-dockerclient"
 	"github.com/digital-wonderland/docker-logstash-forwarder/utils"
+	docker "github.com/fsouza/go-dockerclient"
 )
 
 var (

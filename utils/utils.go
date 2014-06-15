@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	Refresh          ConfigRefresh
+	Refresh ConfigRefresh
 )
 
 type ConfigRefresh struct {
