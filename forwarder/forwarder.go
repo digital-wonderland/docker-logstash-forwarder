@@ -3,11 +3,9 @@ package forwarder
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
 )
@@ -69,15 +67,16 @@ func generateDefaultConfig(logstashEndpoint string) *LogstashForwarderConfig {
 	return config
 }
 
-func addConfigForContainer(config *LogstashForwarderConfig, container docker.APIContainers, hostname string) {
+func addConfigForContainer(config *LogstashForwarderConfig, container *docker.Container) {
 	id := container.ID
 	file := File{}
 	file.Paths = []string{fmt.Sprintf("/var/lib/docker/containers/%s/%s-json.log", id, id)}
 	file.Fields = make(map[string]string)
 	file.Fields["type"] = "docker"
 	file.Fields["docker.id"] = id
-	file.Fields["docker.hostname"] = hostname
-	file.Fields["docker.image"] = container.Image
+	file.Fields["docker.hostname"] = container.Config.Hostname
+	file.Fields["docker.name"] = container.Name
+	file.Fields["docker.image"] = container.Config.Image
 
 	config.Files = append(config.Files, file)
 }
@@ -106,11 +105,15 @@ func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile s
 	}
 
 	log.Printf("Found %d containers:", len(containers))
-	for i, container := range containers {
-		log.Printf("%d. %s", i+1, container.ID)
+	for i, c := range containers {
+		log.Printf("%d. %s", i+1, c.ID)
 
-		hostname := strings.Trim(getHostnameForContainer(container.ID), " \n")
-		addConfigForContainer(globalConfig, container, hostname)
+		container, err := client.InspectContainer(c.ID)
+		if err != nil {
+			log.Fatalf("Unable to inspect container %s: %s", c.ID, err)
+		}
+
+		addConfigForContainer(globalConfig, container)
 
 		containerConfig, err := getLogstashForwarderConfigForContainer(container.ID)
 		if err != nil {
@@ -119,7 +122,7 @@ func GenerateConfig(client *docker.Client, logstashEndpoint string, configFile s
 			}
 		} else {
 			for _, file := range containerConfig.Files {
-				file.Fields["host"] = hostname
+				file.Fields["host"] = container.Config.Hostname
 				globalConfig.Files = append(globalConfig.Files, file)
 			}
 		}
@@ -179,13 +182,4 @@ func getLogstashForwarderConfigForContainer(id string) (*LogstashForwarderConfig
 	}
 
 	return config, nil
-}
-
-func getHostnameForContainer(id string) string {
-	path := fmt.Sprintf("/var/lib/docker/containers/%s/hostname", id)
-	hostname, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatalf("Unable to read hostname of container %s from %s: %s", id, path, err)
-	}
-	return string(hostname[:])
 }
