@@ -117,7 +117,7 @@ func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile s
 
 		forwarderConfig.addContainerLogFile(container)
 
-		containerConfig, err := getInContainerConfig(container.ID)
+		containerConfig, err := getInContainerConfig(container)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				log.Printf("Unable to look for logstash-forwarder config in %s: %s", container.ID, err)
@@ -167,14 +167,14 @@ func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile s
 	log.Printf("Starting logstash-forwarder...")
 }
 
-func getInContainerConfig(id string) (*LogstashForwarderConfig, error) {
-	containerDirectory := fmt.Sprintf("/var/lib/docker/btrfs/subvolumes/%s", id)
+func getInContainerConfig(container *docker.Container) (*LogstashForwarderConfig, error) {
+	containerDirectory := fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s", container.Driver, container.ID)
 	path := fmt.Sprintf("%s/etc/logstash-forwarder.conf", containerDirectory)
 	config, err := readConfigFromFile(path)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Found logstash-forwarder config in %s", id)
+	log.Printf("Found logstash-forwarder config in %s", container.ID)
 
 	for _, file := range config.Files {
 		log.Printf("Adding files %s of type %s", file.Paths, file.Fields["type"])
