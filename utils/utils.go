@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -62,6 +63,10 @@ func RegisterDockerEventListener(client *docker.Client, function func(), wg *syn
 			Refresh.Mu.Unlock()
 		}
 	}
+}
+
+func ContainerFileSystemPath(container *docker.Container) string {
+	return fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s", container.Driver, container.ID)
 }
 
 func TimeTrack(start time.Time, name string) {

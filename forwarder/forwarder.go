@@ -2,12 +2,12 @@ package forwarder
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"time"
 
+	"github.com/digital-wonderland/docker-logstash-forwarder/forwarder/config"
 	"github.com/digital-wonderland/docker-logstash-forwarder/utils"
 	docker "github.com/fsouza/go-dockerclient"
 )
@@ -17,82 +17,16 @@ var (
 	running = false
 )
 
-type Network struct {
-	Servers        []string `json:"servers"`
-	SslCertificate string   `json:"ssl certificate"`
-	SslKey         string   `json:"ssl key"`
-	SslCa          string   `json:"ssl ca"`
-	Timeout        int64    `json:"timeout"`
-}
-
-type File struct {
-	Paths  []string          `json:"paths"`
-	Fields map[string]string `json:"fields"`
-}
-
-type LogstashForwarderConfig struct {
-	Network Network `json:"network"`
-	Files   []File  `json:"files"`
-}
-
-func (config *LogstashForwarderConfig) addContainerLogFile(container *docker.Container) {
-	id := container.ID
-	file := File{}
-	file.Paths = []string{fmt.Sprintf("/var/lib/docker/containers/%s/%s-json.log", id, id)}
-	file.Fields = make(map[string]string)
-	file.Fields["type"] = "docker"
-	file.Fields["docker.id"] = id
-	file.Fields["docker.hostname"] = container.Config.Hostname
-	file.Fields["docker.name"] = container.Name
-	file.Fields["docker.image"] = container.Config.Image
-
-	config.Files = append(config.Files, file)
-}
-
-func readConfigFromFile(path string) (*LogstashForwarderConfig, error) {
-	configFile, err := os.Open(path)
-	defer configFile.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	logstashConfig := new(LogstashForwarderConfig)
-
-	jsonParser := json.NewDecoder(configFile)
-	if err = jsonParser.Decode(&logstashConfig); err != nil {
-		return nil, err
-	}
-
-	return logstashConfig, nil
-}
-
-func generateDefaultConfig(logstashEndpoint string) *LogstashForwarderConfig {
-	network := Network{
-		Servers:        []string{logstashEndpoint},
-		SslCertificate: "/etc/pki/tls/certs/logstash-forwarder.crt",
-		SslKey:         "/etc/pki/tls/private/logstash-forwarder.key",
-		SslCa:          "/etc/pki/tls/certs/logstash-forwarder.crt",
-		Timeout:        15,
-	}
-
-	config := &LogstashForwarderConfig{
-		Network: network,
-		Files:   []File{},
-	}
-
-	return config
-}
-
-func getConfig(logstashEndpoint string, configFile string) *LogstashForwarderConfig {
+func getConfig(logstashEndpoint string, configFile string) *config.LogstashForwarderConfig {
 	if configFile != "" {
-		config, err := readConfigFromFile(configFile)
+		config, err := config.NewFromFile(configFile)
 		if err != nil {
 			log.Fatalf("Unable to read logstash-forwarder config from %s: %s", configFile, err)
 		}
 		log.Printf("Using logstash-forwarder config from %s as template", configFile)
 		return config
 	}
-	return generateDefaultConfig(logstashEndpoint)
+	return config.NewFromDefault(logstashEndpoint)
 }
 
 func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile string) {
@@ -115,9 +49,9 @@ func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile s
 			log.Fatalf("Unable to inspect container %s: %s", c.ID, err)
 		}
 
-		forwarderConfig.addContainerLogFile(container)
+		forwarderConfig.AddContainerLogFile(container)
 
-		containerConfig, err := getInContainerConfig(container)
+		containerConfig, err := config.NewFromContainer(container)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				log.Printf("Unable to look for logstash-forwarder config in %s: %s", container.ID, err)
@@ -138,7 +72,10 @@ func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile s
 	defer fo.Close()
 
 	j, err := json.MarshalIndent(forwarderConfig, "", "  ")
-	fo.Write(j)
+	if err != nil {
+		log.Printf("Unable to MarshalIndent logstash-forwarder config: %s", err)
+	}
+	_, err = fo.Write(j)
 	if err != nil {
 		log.Fatalf("Unable to write logstash-forwarder config to %s: %s", configPath, err)
 	}
@@ -146,7 +83,7 @@ func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile s
 
 	if running {
 		log.Println("Waiting for logstash-forwarder to stop")
-		// perhaps use SIGTERM instead of Kill()?
+		// perhaps use SIGTERM first instead of just Kill()?
 		//		if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		if err := cmd.Process.Kill(); err != nil {
 			log.Printf("Unable to stop logstash-forwarder")
@@ -165,22 +102,4 @@ func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile s
 	}
 	running = true
 	log.Printf("Starting logstash-forwarder...")
-}
-
-func getInContainerConfig(container *docker.Container) (*LogstashForwarderConfig, error) {
-	containerDirectory := fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s", container.Driver, container.ID)
-	path := fmt.Sprintf("%s/etc/logstash-forwarder.conf", containerDirectory)
-	config, err := readConfigFromFile(path)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("Found logstash-forwarder config in %s", container.ID)
-
-	for _, file := range config.Files {
-		log.Printf("Adding files %s of type %s", file.Paths, file.Fields["type"])
-		for i, path := range file.Paths {
-			file.Paths[i] = containerDirectory + path
-		}
-	}
-	return config, nil
 }
