@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/digital-wonderland/docker-logstash-forwarder",
-	"GoVersion": "go1.2.2",
+	"GoVersion": "go1.3",
 	"Packages": [
 		"./..."
 	],
