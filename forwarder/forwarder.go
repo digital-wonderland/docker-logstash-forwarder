@@ -29,6 +29,8 @@ func getConfig(logstashEndpoint string, configFile string) *config.LogstashForwa
 	return config.NewFromDefault(logstashEndpoint)
 }
 
+// Refresh logstash-forwarder.
+// The configuration is either initialized from configFile or the default is used (only important for certificate configuration).
 func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile string) {
 	defer utils.TimeTrack(time.Now(), "Config generation")
 

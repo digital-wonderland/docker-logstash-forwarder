@@ -1,3 +1,4 @@
+// Package utils provides some utility methods
 package utils
 
 import (
@@ -14,12 +15,19 @@ var (
 	Refresh ConfigRefresh
 )
 
+// ConfigRefresh stores refresh synchronization data
 type ConfigRefresh struct {
 	Mu          sync.Mutex
 	IsTriggered bool
 	timer       *time.Timer
 }
 
+/*
+EndPoint returns the first non empty string by evaluating:
+	1. flag
+	2. the environment variable specified by envVar
+	3. sensibleDefault
+*/
 func EndPoint(sensibleDefault string, flag string, envVar string) string {
 	if flag != "" {
 		return flag
@@ -30,6 +38,8 @@ func EndPoint(sensibleDefault string, flag string, envVar string) string {
 	}
 }
 
+// RegisterDockerEventListener registers function as event listener with docker.
+// laziness defines how many seconds to wait, after an event is received, until a refresh is triggered
 func RegisterDockerEventListener(client *docker.Client, function func(), wg *sync.WaitGroup, laziness int) {
 	wg.Add(1)
 	defer wg.Done()
@@ -65,10 +75,17 @@ func RegisterDockerEventListener(client *docker.Client, function func(), wg *syn
 	}
 }
 
+// ContainerFileSystemPath returns the path of the containers file system
+// (it is assumed to be bellow /var/lib/docker/$driver/subvolumes/$id)
 func ContainerFileSystemPath(container *docker.Container) string {
 	return fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s", container.Driver, container.ID)
 }
 
+/*
+TimeTrack can be used to log method execution time:
+
+	defer utils.TimeTrack(time.Now(), "Config generation")
+*/
 func TimeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
 	log.Printf("%s took %s", name, elapsed)
