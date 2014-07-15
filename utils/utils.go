@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	// Refresh contains the global lock to sync configuration refresh.
 	Refresh ConfigRefresh
 )
 

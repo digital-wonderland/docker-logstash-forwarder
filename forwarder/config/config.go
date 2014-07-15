@@ -1,4 +1,4 @@
-// logstash-forwarder config handling
+// Package config implements functions to manipulate logstash-forwarder configs.
 package config
 
 import (
@@ -11,7 +11,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 )
 
-// Network section of a logstash-forwarder configuration
+// Network section of a configuration.
 type Network struct {
 	Servers        []string `json:"servers"`
 	SslCertificate string   `json:"ssl certificate"`
@@ -20,19 +20,19 @@ type Network struct {
 	Timeout        int64    `json:"timeout"`
 }
 
-// File section of a logstash-forwarder configuration
+// File section of a configuration.
 type File struct {
 	Paths  []string          `json:"paths"`
 	Fields map[string]string `json:"fields"`
 }
 
-// Logstash-forwarder configuration root
+// LogstashForwarderConfig is the configs root structure.
 type LogstashForwarderConfig struct {
 	Network Network `json:"network"`
 	Files   []File  `json:"files"`
 }
 
-// Add the containers log file to the files of this config
+// AddContainerLogFile adds the containers docker log file to this config.
 func (config *LogstashForwarderConfig) AddContainerLogFile(container *docker.Container) {
 	id := container.ID
 	file := File{}
@@ -47,7 +47,7 @@ func (config *LogstashForwarderConfig) AddContainerLogFile(container *docker.Con
 	config.Files = append(config.Files, file)
 }
 
-// Create a new logstash-forwarder config from a file
+// NewFromFile returns a new config based on the file at path.
 func NewFromFile(path string) (*LogstashForwarderConfig, error) {
 	configFile, err := os.Open(path)
 	defer configFile.Close()
@@ -65,7 +65,7 @@ func NewFromFile(path string) (*LogstashForwarderConfig, error) {
 	return logstashConfig, nil
 }
 
-// Create a new logstash-forwarder default config
+// NewFromDefault returns a new default config.
 func NewFromDefault(logstashEndpoint string) *LogstashForwarderConfig {
 	network := Network{
 		Servers:        []string{logstashEndpoint},
@@ -83,8 +83,8 @@ func NewFromDefault(logstashEndpoint string) *LogstashForwarderConfig {
 	return config
 }
 
-// Create a new logstash-forwarder config for a container if it contains a config file
-// at /etc/logstash-forwarder.conf
+// NewFromContainer returns a new config based on /etc/logstash-forwarder.conf within the container,
+// if it exists.
 func NewFromContainer(container *docker.Container) (*LogstashForwarderConfig, error) {
 	containerDirectory := utils.ContainerFileSystemPath(container)
 	path := fmt.Sprintf("%s/etc/logstash-forwarder.conf", containerDirectory)
