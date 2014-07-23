@@ -12,9 +12,4 @@ RUN go get github.com/elasticsearch/logstash-forwarder \
  && go get github.com/tools/godep \
  && godep get github.com/digital-wonderland/docker-logstash-forwarder
 
-RUN /usr/sbin/groupadd -r logstash-forwarder \
- && /usr/sbin/useradd -r -d / -s /sbin/nologin -c "Logstash Forwarder" -g logstash-forwarder logstash-forwarder
-
-USER logstash-forwarder
-
 ENTRYPOINT ["/var/lib/golang/bin/docker-logstash-forwarder"]
