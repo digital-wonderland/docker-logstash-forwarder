@@ -1,0 +1,140 @@
+#cloud-config
+
+coreos:
+  etcd:
+      #generate a new token for each unique cluster from https://discovery.etcd.io/new
+      #discovery: https://discovery.etcd.io/<token>
+      addr: $public_ipv4:4001
+      peer-addr: $public_ipv4:7001
+  units:
+    - name: etcd.service
+      command: start
+    - name: fleet.service
+      command: start
+      runtime: no
+      content: |
+        [Unit]
+        Description=fleet
+
+        [Service]
+        Environment=FLEET_PUBLIC_IP=$public_ipv4
+        ExecStart=/usr/bin/fleet
+    - name: docker-tcp.socket
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Docker Socket for the API
+
+        [Socket]
+        ListenStream=2375
+        Service=docker.service
+        BindIPv6Only=both
+
+        [Install]
+        WantedBy=sockets.target
+    - name: elasticsearch.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Elasticsearch
+        Documentation=http://www.elasticsearch.org
+        After=docker.service
+
+        [Service]
+        EnvironmentFile=/etc/environment
+        LimitNOFILE=65535
+        ExecStartPre=/usr/bin/docker pull digitalwonderland/elasticsearch
+        TimeoutStartSec=0
+        ExecStart=/bin/bash -c '/usr/bin/docker start -a elasticsearch || /usr/bin/docker run --name elasticsearch -p 9200:9200 digitalwonderland/elasticsearch'
+        TimeoutStopSec=30
+        ExecStop=/usr/bin/docker stop elasticsearch
+
+        [Install]
+        WantedBy=multi-user.target
+
+        [X-Fleet]
+        X-Conflicts=elasticsearch.service
+    - name: logstash.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Logstash
+        Documentation=http://logstash.net
+        After=docker.service
+        Requires=elasticsearch.service
+
+        [Service]
+        EnvironmentFile=/etc/environment
+        ExecStartPre=/usr/bin/docker pull digitalwonderland/logstash
+        TimeoutStartSec=0
+        ExecStart=/bin/bash -c 'sleep 1 && /usr/bin/docker start -a logstash || /usr/bin/docker run --name logstash -p 5043:5043 --link elasticsearch:elasticsearch digitalwonderland/logstash'
+        TimeoutStopSec=30
+        ExecStop=/usr/bin/docker stop logstash
+
+        [Install]
+        WantedBy=multi-user.target
+
+        [X-Fleet]
+        X-Conflicts=logstash.service
+    - name: logstash-forwarder.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Logstash Forwarder
+        Documentation=https://github.com/digital-wonderland/docker-logstash-forwarder
+        After=docker.service
+        Requires=logstash.service
+
+        [Service]
+        EnvironmentFile=/etc/environment
+        ExecStartPre=/usr/bin/docker pull digitalwonderland/logstash-forwarder
+        TimeoutStartSec=0
+        ExecStart=/bin/bash -c 'sleep 2 && /usr/bin/docker start -a logstash-forwarder || /usr/bin/docker run --name logstash-forwarder -v /var/lib/docker:/var/lib/docker:ro -v /var/run/docker.sock:/var/run/docker.sock --link logstash:logstash --volumes-from logstash digitalwonderland/logstash-forwarder'
+        TimeoutStopSec=30
+        ExecStop=/usr/bin/docker stop logstash-forwarder
+
+        [Install]
+        WantedBy=multi-user.target
+
+        [X-Fleet]
+        X-Conflicts=logstash-forwarder.service
+    - name: kibana.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Kibana
+        Documentation=http://www.elasticsearch.org/overview/kibana/
+        After=docker.service
+
+        [Service]
+        EnvironmentFile=/etc/environment
+        ExecStartPre=/usr/bin/docker pull digitalwonderland/kibana
+        TimeoutStartSec=0
+        ExecStart=/bin/bash -c '/usr/bin/docker start -a kibana || /usr/bin/docker run --name kibana -p 8888:80 digitalwonderland/kibana'
+        TimeoutStopSec=30
+        ExecStop=/usr/bin/docker stop kibana
+
+        [Install]
+        WantedBy=multi-user.target
+write_files:
+  - path: /etc/profile.d/alias.sh
+    content: |
+      alias l='ls -la'
+      alias ll='ls -lah'
+      alias d='docker'
+      alias ds='docker ps'
+      alias dsa='docker ps -a'
+      alias di='docker images'
+      alias dl='docker logs'
+      alias dlf='docker logs -f'
+      alias drm='docker rm -f'
+      alias drmi='docker rmi'
+      alias sd='sudo systemctl'
+      alias cci='sudo coreos-cloudinit --from-file'
+      alias j='journalctl'
+      function nsa { sudo nsenter -p -u -m -i -n -t $(docker inspect -f '{{ .State.Pid }}' $1) ; }
