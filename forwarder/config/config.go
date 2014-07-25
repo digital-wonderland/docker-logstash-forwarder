@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
-	"github.com/digital-wonderland/docker-logstash-forwarder/utils"
 	docker "github.com/fsouza/go-dockerclient"
 )
 
@@ -86,8 +86,7 @@ func NewFromDefault(logstashEndpoint string) *LogstashForwarderConfig {
 // NewFromContainer returns a new config based on /etc/logstash-forwarder.conf within the container,
 // if it exists.
 func NewFromContainer(container *docker.Container) (*LogstashForwarderConfig, error) {
-	containerDirectory := utils.ContainerFileSystemPath(container)
-	path := fmt.Sprintf("%s/etc/logstash-forwarder.conf", containerDirectory)
+	path := fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s/etc/logstash-forwarder.conf", container.Driver, container.ID)
 	config, err := NewFromFile(path)
 	if err != nil {
 		return nil, err
@@ -97,8 +96,17 @@ func NewFromContainer(container *docker.Container) (*LogstashForwarderConfig, er
 	for _, file := range config.Files {
 		log.Printf("Adding files %s of type %s", file.Paths, file.Fields["type"])
 		for i, path := range file.Paths {
-			file.Paths[i] = containerDirectory + path
+			file.Paths[i] = calculateLogFilePath(container, path)
 		}
 	}
 	return config, nil
+}
+
+func calculateLogFilePath(container *docker.Container, path string) string {
+	for k, v := range container.Volumes {
+		if strings.HasPrefix(path, k) {
+			return v + strings.TrimPrefix(path, k)
+		}
+	}
+	return fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s%s", container.Driver, container.ID, path)
 }

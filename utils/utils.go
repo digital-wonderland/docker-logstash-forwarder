@@ -2,7 +2,6 @@
 package utils
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -74,12 +73,6 @@ func RegisterDockerEventListener(client *docker.Client, function func(), wg *syn
 			Refresh.Mu.Unlock()
 		}
 	}
-}
-
-// ContainerFileSystemPath returns the path of the containers file system
-// (it is assumed to be bellow /var/lib/docker/$driver/subvolumes/$id)
-func ContainerFileSystemPath(container *docker.Container) string {
-	return fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s", container.Driver, container.ID)
 }
 
 /*
