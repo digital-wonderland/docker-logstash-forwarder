@@ -108,5 +108,5 @@ func calculateLogFilePath(container *docker.Container, path string) string {
 			return v + strings.TrimPrefix(path, k)
 		}
 	}
-	return fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s%s", container.Driver, container.ID, path)
+	return fmt.Sprintf("/var/lib/docker/%s/mnt/%s%s", container.Driver, container.ID, path)
 }
