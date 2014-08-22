@@ -10,6 +10,6 @@ RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noa
 
 RUN go get github.com/elasticsearch/logstash-forwarder \
  && go get github.com/tools/godep \
- && godep get github.com/digital-wonderland/docker-logstash-forwarder
+ && godep get github.com/dryewo/docker-logstash-forwarder
 
 ENTRYPOINT ["/var/lib/golang/bin/docker-logstash-forwarder"]
