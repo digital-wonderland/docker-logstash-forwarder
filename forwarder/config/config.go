@@ -86,7 +86,7 @@ func NewFromDefault(logstashEndpoint string) *LogstashForwarderConfig {
 // NewFromContainer returns a new config based on /etc/logstash-forwarder.conf within the container,
 // if it exists.
 func NewFromContainer(container *docker.Container) (*LogstashForwarderConfig, error) {
-	path := fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s/etc/logstash-forwarder.conf", container.Driver, container.ID)
+	path := fmt.Sprintf("/var/lib/docker/%s/mnt/%s/etc/logstash-forwarder.conf", container.Driver, container.ID)
 	config, err := NewFromFile(path)
 	if err != nil {
 		return nil, err
