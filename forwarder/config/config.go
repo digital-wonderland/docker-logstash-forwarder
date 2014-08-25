@@ -86,8 +86,7 @@ func NewFromDefault(logstashEndpoint string) *LogstashForwarderConfig {
 // NewFromContainer returns a new config based on /etc/logstash-forwarder.conf within the container,
 // if it exists.
 func NewFromContainer(container *docker.Container) (*LogstashForwarderConfig, error) {
-	path := fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s/etc/logstash-forwarder.conf", container.Driver, container.ID)
-	config, err := NewFromFile(path)
+	config, err := NewFromFile(calculateFilePath(container, "/etc/logstash-forwarder.conf"))
 	if err != nil {
 		return nil, err
 	}
@@ -96,17 +95,25 @@ func NewFromContainer(container *docker.Container) (*LogstashForwarderConfig, er
 	for _, file := range config.Files {
 		log.Printf("Adding files %s of type %s", file.Paths, file.Fields["type"])
 		for i, path := range file.Paths {
-			file.Paths[i] = calculateLogFilePath(container, path)
+			file.Paths[i] = calculateFilePath(container, path)
 		}
 	}
 	return config, nil
 }
 
-func calculateLogFilePath(container *docker.Container, path string) string {
+func calculateFilePath(container *docker.Container, path string) string {
 	for k, v := range container.Volumes {
 		if strings.HasPrefix(path, k) {
 			return v + strings.TrimPrefix(path, k)
 		}
 	}
-	return fmt.Sprintf("/var/lib/docker/%s/subvolumes/%s%s", container.Driver, container.ID, path)
+
+	var prefix = "/var/lib/docker/"
+	switch container.Driver {
+	case "aufs":
+		prefix += "aufs/mnt"
+	default:
+		prefix += "btrfs/subvolumes"
+	}
+	return fmt.Sprintf("%s/%s%s", prefix, container.ID, path)
 }
