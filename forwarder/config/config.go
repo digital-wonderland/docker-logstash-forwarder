@@ -39,6 +39,7 @@ func (config *LogstashForwarderConfig) AddContainerLogFile(container *docker.Con
 	file.Paths = []string{fmt.Sprintf("/var/lib/docker/containers/%s/%s-json.log", id, id)}
 	file.Fields = make(map[string]string)
 	file.Fields["type"] = "docker"
+	file.Fields["codec"] = "json"
 	file.Fields["docker.id"] = id
 	file.Fields["docker.hostname"] = container.Config.Hostname
 	file.Fields["docker.name"] = container.Name
