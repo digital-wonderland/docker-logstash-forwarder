@@ -1,11 +1,11 @@
-FROM digitalwonderland/base:centos6
+FROM digitalwonderland/base
 
 ENV GOPATH /var/lib/golang
 ENV PATH $GOPATH/bin:$PATH
 
 RUN mkdir $GOPATH
 
-RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm \
+RUN yum install -y epel-release \
  && yum install -y hg git golang && yum clean all
 
 RUN go get github.com/elasticsearch/logstash-forwarder \
