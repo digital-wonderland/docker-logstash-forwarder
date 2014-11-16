@@ -47,7 +47,7 @@ coreos:
         LimitNOFILE=65535
         ExecStartPre=/usr/bin/docker pull digitalwonderland/elasticsearch
         TimeoutStartSec=0
-        ExecStart=/bin/bash -c '/usr/bin/docker start -a elasticsearch || /usr/bin/docker run --name elasticsearch -p 9200:9200 digitalwonderland/elasticsearch'
+        ExecStart=/bin/bash -c '/usr/bin/docker start -a elasticsearch || /usr/bin/docker run --name elasticsearch -p 9200:9200 digitalwonderland/elasticsearch -Des.http.cors.enabled=true'
         TimeoutStopSec=30
         ExecStop=/usr/bin/docker stop elasticsearch
 
