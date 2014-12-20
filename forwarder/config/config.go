@@ -120,13 +120,17 @@ func calculateFilePath(container *docker.Container, path string) (string, error)
 	}
 
 	var prefix = "/var/lib/docker/"
+	var suffix = ""
 	switch container.Driver {
 	case "aufs":
 		prefix += "aufs/mnt"
 	case "btrfs":
 		prefix += "btrfs/subvolumes"
+	case "devicemapper":
+		prefix += "devicemapper/mnt"
+		suffix = "/rootfs"
 	default:
 		return "", fmt.Errorf("Unable to calculate file path with unknown driver [%s]", container.Driver)
 	}
-	return fmt.Sprintf("%s/%s%s", prefix, container.ID, path), nil
+	return fmt.Sprintf("%s/%s%s%s", prefix, container.ID, suffix, path), nil
 }
