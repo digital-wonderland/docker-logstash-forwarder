@@ -41,6 +41,7 @@ coreos:
         Description=Elasticsearch
         Documentation=http://www.elasticsearch.org
         After=docker.service
+        Requires=docker.service
 
         [Service]
         EnvironmentFile=/etc/environment
@@ -64,13 +65,15 @@ coreos:
         Description=Logstash
         Documentation=http://logstash.net
         After=docker.service
+        Requires=docker.service
+        After=elasticsearch.service
         Requires=elasticsearch.service
 
         [Service]
         EnvironmentFile=/etc/environment
         ExecStartPre=/usr/bin/docker pull digitalwonderland/logstash
         TimeoutStartSec=0
-        ExecStart=/bin/bash -c 'sleep 1 && /usr/bin/docker start -a logstash || /usr/bin/docker run --name logstash -p 5043:5043 --link elasticsearch:elasticsearch digitalwonderland/logstash'
+        ExecStart=/bin/bash -c '/usr/bin/docker start -a logstash || /usr/bin/docker run --name logstash -p 5043:5043 --link elasticsearch:elasticsearch digitalwonderland/logstash'
         TimeoutStopSec=30
         ExecStop=/usr/bin/docker stop logstash
 
@@ -87,13 +90,15 @@ coreos:
         Description=Logstash Forwarder
         Documentation=https://github.com/digital-wonderland/docker-logstash-forwarder
         After=docker.service
+        Requires=docker.service
+        After=logstash.service
         Requires=logstash.service
 
         [Service]
         EnvironmentFile=/etc/environment
         ExecStartPre=/usr/bin/docker pull digitalwonderland/logstash-forwarder
         TimeoutStartSec=0
-        ExecStart=/bin/bash -c 'sleep 2 && /usr/bin/docker start -a logstash-forwarder || /usr/bin/docker run --name logstash-forwarder -v /var/lib/docker:/var/lib/docker:ro -v /var/run/docker.sock:/var/run/docker.sock --link logstash:logstash --volumes-from logstash digitalwonderland/logstash-forwarder'
+        ExecStart=/bin/bash -c '/usr/bin/docker start -a logstash-forwarder || /usr/bin/docker run --name logstash-forwarder -v /var/lib/docker:/var/lib/docker:ro -v /var/run/docker.sock:/var/run/docker.sock --link logstash:logstash --volumes-from logstash digitalwonderland/logstash-forwarder'
         TimeoutStopSec=30
         ExecStop=/usr/bin/docker stop logstash-forwarder
 
@@ -110,6 +115,7 @@ coreos:
         Description=Kibana
         Documentation=http://www.elasticsearch.org/overview/kibana/
         After=docker.service
+        Requires=docker.service
 
         [Service]
         EnvironmentFile=/etc/environment
