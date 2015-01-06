@@ -77,8 +77,7 @@ If you start from scratch / use [Vagrant](http://www.vagrantup.com/) / are on a 
 
 ## Known Issues:
 
-1. the container is pretty big (>500MB). This is because everything is build from source since sharing your whole docker directory requires quite some trust. This might change once I found a way to reliable integrate some build service with docker hub so binaries get build on commit and only after that a docker build is triggered which includes the just built binaries.
-2. docker-logstash-forwarder must be run as root until Docker provides configurable ownership of shared volumes, because ```/var/lib/docker``` is owned by root on the host and mounted read only, so a non root user can not read from it.
+1. docker-logstash-forwarder must be run as root until Docker provides configurable ownership of shared volumes, because ```/var/lib/docker``` is owned by root on the host and mounted read only, so a non root user can not read from it.
 
 Last but not least it probably should be mentioned, that this is the first time I wrote any go code (a few days, after work), so any 'Duh' pointers are greatly appreciated.
 

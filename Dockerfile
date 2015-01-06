@@ -1,15 +1,7 @@
 FROM digitalwonderland/base
 
-ENV GOPATH /var/lib/golang
-ENV PATH $GOPATH/bin:$PATH
+RUN curl -Lo /usr/local/bin/docker-logstash-forwarder https://github.com/digital-wonderland/docker-logstash-forwarder/releases/download/master/linux_amd64_docker-logstash-forwarder \
+ && curl -Lo /usr/local/bin/logstash-forwarder https://github.com/digital-wonderland/docker-logstash-forwarder/releases/download/master/linux_amd64_logstash-forwarder \
+ && chmod 0755 /usr/local/bin/{docker-logstash-forwarder,logstash-forwarder}
 
-RUN mkdir $GOPATH
-
-RUN yum install -y epel-release \
- && yum install -y hg git golang && yum clean all
-
-RUN go get github.com/elasticsearch/logstash-forwarder \
- && go get github.com/tools/godep \
- && godep get github.com/digital-wonderland/docker-logstash-forwarder
-
-ENTRYPOINT ["/var/lib/golang/bin/docker-logstash-forwarder"]
+ENTRYPOINT ["/usr/local/bin/docker-logstash-forwarder"]
