@@ -2,15 +2,16 @@
 package utils
 
 import (
-	"log"
 	"os"
 	"sync"
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
+	logging "github.com/op/go-logging"
 )
 
 var (
+	log = logging.MustGetLogger("utils")
 	// Refresh contains the global lock to sync configuration refresh.
 	Refresh ConfigRefresh
 )
@@ -53,7 +54,7 @@ func RegisterDockerEventListener(client *docker.Client, function func(), wg *syn
 	}
 	defer client.RemoveEventListener(events)
 
-	log.Println("Listening to docker events...")
+	log.Info("Listening to docker events...")
 	for {
 		event := <-events
 
@@ -62,11 +63,11 @@ func RegisterDockerEventListener(client *docker.Client, function func(), wg *syn
 		}
 
 		if event.Status == "start" || event.Status == "stop" || event.Status == "die" {
-			log.Printf("Received event %s for container %s", event.Status, event.ID[:12])
+			log.Debug("Received event %s for container %s", event.Status, event.ID[:12])
 
 			Refresh.Mu.Lock()
 			if !Refresh.IsTriggered {
-				log.Printf("Triggering refresh in %d seconds", laziness)
+				log.Info("Triggering refresh in %d seconds", laziness)
 				Refresh.timer = time.AfterFunc(time.Duration(laziness)*time.Second, function)
 				Refresh.IsTriggered = true
 			}
@@ -82,5 +83,5 @@ TimeTrack can be used to log method execution time:
 */
 func TimeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
-	log.Printf("%s took %s", name, elapsed)
+	log.Debug("%s took %s", name, elapsed)
 }

@@ -4,12 +4,14 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
+	logging "github.com/op/go-logging"
 )
+
+var log = logging.MustGetLogger("config")
 
 // Network section of a configuration.
 type Network struct {
@@ -94,16 +96,17 @@ func NewFromContainer(container *docker.Container) (*LogstashForwarderConfig, er
 
 	config, err := NewFromFile(filePath)
 	if err != nil {
+		log.Debug("No logstash-forwarder config found in %s", container.ID)
 		return nil, err
 	}
-	log.Printf("Found logstash-forwarder config in %s", container.ID)
+	log.Debug("Found logstash-forwarder config in %s", container.ID)
 
 	for _, file := range config.Files {
-		log.Printf("Adding files %s of type %s", file.Paths, file.Fields["type"])
+		log.Debug("Adding files %s of type %s", file.Paths, file.Fields["type"])
 		for i, path := range file.Paths {
 			filePath, err := calculateFilePath(container, path)
 			if err != nil {
-				log.Printf("Unable to add log file: %s", err)
+				log.Warning("Unable to add log file: %s", err)
 			} else {
 				file.Paths[i] = filePath
 			}
