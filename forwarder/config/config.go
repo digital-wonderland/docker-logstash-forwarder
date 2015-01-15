@@ -132,6 +132,9 @@ func calculateFilePath(container *docker.Container, path string) (string, error)
 	case "devicemapper":
 		prefix += "devicemapper/mnt"
 		suffix = "/rootfs"
+	case "overlay":
+		prefix += "overlay"
+		suffix += "/merged"
 	default:
 		return "", fmt.Errorf("Unable to calculate file path with unknown driver [%s]", container.Driver)
 	}
