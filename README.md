@@ -77,7 +77,16 @@ If you start from scratch / use [Vagrant](http://www.vagrantup.com/) / are on a 
 
 ## Known Issues:
 
-1. docker-logstash-forwarder must be run as root until Docker provides configurable ownership of shared volumes, because ```/var/lib/docker``` is owned by root on the host and mounted read only, so a non root user can not read from it.
+1. docker-logstash-forwarder must be run as root until Docker provides configurable ownership of shared volumes, because ```/var/lib/docker``` is owned by root on the host and mounted read only, so a non root user can not read from it ([docker#7918](https://github.com/docker/docker/issues/7198)).
+
+2. The path of the containers content, on the hosts file system, has to be calculated by trying to take an educated guess based on your currently used docker driver since the docker folks consider this path internal and don't want to make it available via API ([docker#7915](https://github.com/docker/docker/issues/7915)). 
+
+	Known to be working drivers are:
+	
+	* aufs
+	* btrfs
+	* devicemapper
+	* overlay
 
 Last but not least it probably should be mentioned, that this is the first time I wrote any go code (a few days, after work), so any 'Duh' pointers are greatly appreciated.
 
