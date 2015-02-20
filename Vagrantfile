@@ -75,7 +75,7 @@ Vagrant.configure("2") do |config|
         config.vm.network "forwarded_port", guest: 2375, host: ($expose_docker_tcp + i - 1), auto_correct: true
       end
 
-      config.vm.network "forwarded_port", guest: 8888, host: 8888, auto_correct: true
+      config.vm.network "forwarded_port", guest: 5601, host: 5601, auto_correct: true
       config.vm.network "forwarded_port", guest: 9200, host: 9200, auto_correct: true
 
       config.vm.provider :vmware_fusion do |vb|

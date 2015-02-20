@@ -73,7 +73,7 @@ If you have my [elasticsearch](https://registry.hub.docker.com/u/digitalwonderla
     $ docker pull digitalwonderland/logstash-forwarder
     $ docker run -d --name logstash-forwarder -v /var/lib/docker:/var/lib/docker:ro -v /var/run/docker.sock:/var/run/docker.sock --link logstash:logstash --volumes-from logstash digitalwonderland/logstash-forwarder
 
-If you start from scratch / use [Vagrant](http://www.vagrantup.com/) / are on a Mac: just clone this repository and run ```vagrant up```. This gives you a VM based on [CoreOS](https://coreos.com/) (which is awesome btw) running those 3 containers & [Kibana](http://www.elasticsearch.org/overview/kibana/) listening to [localhost:8888](http://localhost:8888) (Docker listens to [localhost:2375](http://localhost:2375/containers/json)).
+If you start from scratch / use [Vagrant](http://www.vagrantup.com/) / are on a Mac: just clone this repository and run ```vagrant up```. This gives you a VM based on [CoreOS](https://coreos.com/) (which is awesome btw) running those 3 containers & [Kibana](http://www.elasticsearch.org/overview/kibana/) listening to [localhost:5601](http://localhost:5601) (Docker listens to [localhost:2375](http://localhost:2375/containers/json)).
 
 ## Known Issues:
 

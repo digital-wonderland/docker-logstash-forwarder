@@ -116,12 +116,14 @@ coreos:
         Documentation=http://www.elasticsearch.org/overview/kibana/
         After=docker.service
         Requires=docker.service
+        After=elasticsearch.service
+        Requires=elasticsearch.service
 
         [Service]
         EnvironmentFile=/etc/environment
         ExecStartPre=/usr/bin/docker pull digitalwonderland/kibana
         TimeoutStartSec=0
-        ExecStart=/bin/bash -c '/usr/bin/docker start -a kibana || /usr/bin/docker run --name kibana -p 8888:80 digitalwonderland/kibana'
+        ExecStart=/bin/bash -c '/usr/bin/docker start -a kibana || /usr/bin/docker run --name kibana -p 5601:5601 --link elasticsearch:elasticsearch digitalwonderland/kibana'
         TimeoutStopSec=30
         ExecStop=/usr/bin/docker stop kibana
 
