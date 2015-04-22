@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/digital-wonderland/docker-logstash-forwarder/forwarder/config"
@@ -31,7 +32,7 @@ func getConfig(logstashEndpoint string, configFile string) *config.LogstashForwa
 }
 
 // TriggerRefresh refreshes the logstash-forwarder configuration and restarts it.
-func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile string) {
+func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile string, quiet bool) {
 	defer utils.TimeTrack(time.Now(), "Config generation")
 
 	log.Debug("Generating configuration...")
@@ -95,7 +96,7 @@ func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile s
 		}
 		log.Info("Stopped logstash-forwarder")
 	}
-	cmd = exec.Command("logstash-forwarder", "-config", configPath)
+	cmd = exec.Command("logstash-forwarder", "-config", configPath, "-quiet", strconv.FormatBool(quiet))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
