@@ -71,7 +71,7 @@ func NewFromFile(path string) (*LogstashForwarderConfig, error) {
 // NewFromDefault returns a new default config.
 func NewFromDefault(logstashEndpoint string) *LogstashForwarderConfig {
 	network := Network{
-		Servers:        []string{logstashEndpoint},
+		Servers:        strings.Split(logstashEndpoint, ","),
 		SslCertificate: "/mnt/logstash-forwarder/logstash-forwarder.crt",
 		SslKey:         "/mnt/logstash-forwarder/logstash-forwarder.key",
 		SslCa:          "/mnt/logstash-forwarder/logstash-forwarder.crt",
