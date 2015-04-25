@@ -30,7 +30,7 @@ func initFlags() {
 	flag.IntVar(&laziness, "lazyness", 5, "number of seconds to wait after an event before generating new configuration")
 	flag.StringVar(&logstashEndPoint, "logstash", "", "logstash endpoint - defaults to $LOGSTASH_HOST or logstash:5043. Multiple hosts must be separated with ','")
 	flag.StringVar(&configFile, "config", "", "logstash-forwarder config")
-	flag.BoolVar(&quiet, "quiet", true, "run logstash-forwarder with -quiet")
+	flag.BoolVar(&quiet, "quiet", false, "run logstash-forwarder with -quiet")
 	flag.Parse()
 }
 

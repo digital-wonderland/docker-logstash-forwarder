@@ -2,9 +2,9 @@ package forwarder
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
 	"time"
 
 	"github.com/digital-wonderland/docker-logstash-forwarder/forwarder/config"
@@ -96,7 +96,7 @@ func TriggerRefresh(client *docker.Client, logstashEndpoint string, configFile s
 		}
 		log.Info("Stopped logstash-forwarder")
 	}
-	cmd = exec.Command("logstash-forwarder", "-config", configPath, "-quiet", strconv.FormatBool(quiet))
+	cmd = exec.Command("logstash-forwarder", "-config", configPath, fmt.Sprintf("-quiet=%t", quiet))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
