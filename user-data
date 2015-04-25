@@ -98,7 +98,7 @@ coreos:
         EnvironmentFile=/etc/environment
         ExecStartPre=/usr/bin/docker pull digitalwonderland/logstash-forwarder
         TimeoutStartSec=0
-        ExecStart=/bin/bash -c '/usr/bin/docker start -a logstash-forwarder || /usr/bin/docker run --name logstash-forwarder -v /var/lib/docker:/var/lib/docker:ro -v /var/run/docker.sock:/var/run/docker.sock --link logstash:logstash --volumes-from logstash digitalwonderland/logstash-forwarder'
+        ExecStart=/bin/bash -c '/usr/bin/docker start -a logstash-forwarder || /usr/bin/docker run --name logstash-forwarder -v /var/lib/docker:/var/lib/docker:ro -v /var/run/docker.sock:/var/run/docker.sock --link logstash:logstash --volumes-from logstash digitalwonderland/logstash-forwarder -quiet'
         TimeoutStopSec=30
         ExecStop=/usr/bin/docker stop logstash-forwarder
 
