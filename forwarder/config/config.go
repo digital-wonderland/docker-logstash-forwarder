@@ -126,7 +126,7 @@ func calculateFilePath(container *docker.Container, path string) (string, error)
 	var suffix = ""
 	switch container.Driver {
 	case "aufs":
-		prefix += "aufs/mnt"
+		prefix += "aufs/diff"
 	case "btrfs":
 		prefix += "btrfs/subvolumes"
 	case "devicemapper":
