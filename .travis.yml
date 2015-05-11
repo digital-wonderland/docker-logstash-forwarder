@@ -26,4 +26,4 @@ after_success:
   - test $UPLOAD_BINARIES == "true" && (cd $HOME/gopath/src/github.com/elasticsearch/logstash-forwarder && gox -os "darwin linux openbsd windows" -output "$HOME/gopath/src/github.com/digital-wonderland/docker-logstash-forwarder/dist/{{.OS}}_{{.Arch}}_{{.Dir}}")
   - test $UPLOAD_BINARIES == "true" && export GOPATH=`godep path`:$GOPATH
   - test $UPLOAD_BINARIES == "true" && gox -os "darwin linux windows" -output "dist/{{.OS}}_{{.Arch}}_{{.Dir}}"
-  - test $UPLOAD_BINARIES == "true" && ghr --username digital-wonderland --repository docker-logstash-forwarder --token $GITHUB_TOKEN --replace --debug master dist/
+  - test $UPLOAD_BINARIES == "true" && ghr --username digital-wonderland --repository docker-logstash-forwarder --token $GITHUB_TOKEN --delete --debug master dist/
