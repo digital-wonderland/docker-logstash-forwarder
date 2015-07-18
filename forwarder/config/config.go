@@ -51,6 +51,16 @@ func (config *LogstashForwarderConfig) AddContainerLogFile(container *docker.Con
 		file.Fields["docker.label."+k] = v
 	}
 
+	if container.Node != nil {
+		file.Fields["docker.node.id"] = container.Node.ID
+		file.Fields["docker.node.ip"] = container.Node.IP
+		file.Fields["docker.node.name"] = container.Node.Name
+
+		for k, v := range container.Node.Labels {
+			file.Fields["docker.node.label."+k] = v
+		}
+	}
+
 	config.Files = append(config.Files, file)
 }
 
