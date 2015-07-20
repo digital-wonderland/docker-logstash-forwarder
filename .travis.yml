@@ -7,7 +7,7 @@ go:
 
 before_install:
   - export PATH=$PATH:$GOPATH/bin
-  - export UPLOAD_BINARIES=`test ${TRAVIS_GO_VERSION#go} == "1.4" && test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" && echo "true" || echo "false"`
+  - export UPLOAD_BINARIES=`test ${TRAVIS_GO_VERSION#go} == "1.4" && test $TRAVIS_PULL_REQUEST == "false" && test -z $TRAVIS_TAG && test $TRAVIS_BRANCH == "master" && echo "true" || echo "false"`
   - go get -v -u github.com/kr/godep
 
 install:
@@ -25,4 +25,4 @@ after_success:
   - test $UPLOAD_BINARIES == "true" && (cd $HOME/gopath/src/github.com/elasticsearch/logstash-forwarder && gox -os "darwin linux openbsd windows" -output "$HOME/gopath/src/github.com/digital-wonderland/docker-logstash-forwarder/dist/{{.OS}}_{{.Arch}}_{{.Dir}}")
   - test $UPLOAD_BINARIES == "true" && export GOPATH=`godep path`:$GOPATH
   - test $UPLOAD_BINARIES == "true" && gox -os "darwin linux windows" -output "dist/{{.OS}}_{{.Arch}}_{{.Dir}}"
-  - test $UPLOAD_BINARIES == "true" && ghr --username digital-wonderland --repository docker-logstash-forwarder --token $GITHUB_TOKEN --delete --debug master dist/
+  - test $UPLOAD_BINARIES == "true" && ghr --username digital-wonderland --repository docker-logstash-forwarder --token $GITHUB_TOKEN --delete --debug latest dist/
