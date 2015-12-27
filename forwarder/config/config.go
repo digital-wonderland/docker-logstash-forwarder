@@ -48,8 +48,8 @@ func (config *LogstashForwarderConfig) AddContainerLogFile(container *docker.Con
 	file.Fields["docker/image"] = container.Config.Image
 
 	for k, v := range container.Config.Labels {
-		l := strings.Replace(k, ".", "-", -1)
-		file.Fields["docker/label/"+l] = v
+		k = strings.Replace(k, ".", "-", -1)
+		file.Fields["docker/label/"+k] = v
 	}
 
 	if container.Node != nil {
@@ -58,8 +58,8 @@ func (config *LogstashForwarderConfig) AddContainerLogFile(container *docker.Con
 		file.Fields["docker/node/name"] = container.Node.Name
 
 		for k, v := range container.Node.Labels {
-			l := strings.Replace(k, ".", "-", -1)
-			file.Fields["docker/node/label/"+l] = v
+			k = strings.Replace(k, ".", "-", -1)
+			file.Fields["docker/node/label/"+k] = v
 		}
 	}
 
