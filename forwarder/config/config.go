@@ -138,21 +138,26 @@ func calculateFilePath(container *docker.Container, path string) (string, error)
 		}
 	}
 
-	var prefix = "/var/lib/docker/"
-	var suffix = ""
-	switch container.Driver {
-	case "aufs":
-		prefix += "aufs/diff"
-	case "btrfs":
-		prefix += "btrfs/subvolumes"
-	case "devicemapper":
-		prefix += "devicemapper/mnt"
-		suffix = "/rootfs"
-	case "overlay":
-		prefix += "overlay"
-		suffix += "/merged"
-	default:
-		return "", fmt.Errorf("Unable to calculate file path with unknown driver [%s]", container.Driver)
+	if container.Driver == "overlay2" {
+		return container.GraphDriver.Data["MergedDir"], nil
+	} else {
+		var prefix = "/var/lib/docker/"
+		var suffix = ""
+
+		switch container.Driver {
+		case "aufs":
+			prefix += "aufs/diff"
+		case "btrfs":
+			prefix += "btrfs/subvolumes"
+		case "devicemapper":
+			prefix += "devicemapper/mnt"
+			suffix = "/rootfs"
+		case "overlay":
+			prefix += "overlay"
+			suffix += "/merged"
+		default:
+			return "", fmt.Errorf("Unable to calculate file path with unknown driver [%s]", container.Driver)
+		}
+		return fmt.Sprintf("%s/%s%s%s", prefix, container.ID, suffix, path), nil
 	}
-	return fmt.Sprintf("%s/%s%s%s", prefix, container.ID, suffix, path), nil
 }

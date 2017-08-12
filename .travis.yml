@@ -1,14 +1,12 @@
 language: go
 
 go:
-  - 1.3
-  - 1.4
-  - 1.5
+  - 1.8
 #  - tip
 
 before_install:
   - export PATH=$PATH:$GOPATH/bin
-  - export UPLOAD_BINARIES=`test ${TRAVIS_GO_VERSION#go} == "1.4" && test $TRAVIS_PULL_REQUEST == "false" && test -z $TRAVIS_TAG && test $TRAVIS_BRANCH == "master" && echo "true" || echo "false"`
+  - export UPLOAD_BINARIES=`test ${TRAVIS_GO_VERSION#go} == "1.8" && test $TRAVIS_PULL_REQUEST == "false" && test -z $TRAVIS_TAG && test $TRAVIS_BRANCH == "master" && echo "true" || echo "false"`
   - go get -v -u github.com/kr/godep
 
 install:
