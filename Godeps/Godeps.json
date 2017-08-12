@@ -7,7 +7,8 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "9997944ef0571631d04f598c6d31bdbe0915d5a0"
+			"Comment": "docker-1.9/go-1.4-416-g7577294",
+			"Rev": "75772940379e725b5aae213e570f9dcd751951cb"
 		},
 		{
 			"ImportPath": "github.com/op/go-logging",
